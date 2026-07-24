@@ -36,6 +36,7 @@ Program telah diuji dan seluruh fitur utama dapat berjalan dengan baik, yaitu:
 6.	File keuangan.txt berhasil dibuat melalui fitur Export.
    
 Kesimpulan
+
 Aplikasi Pencatatan Keuangan Harian telah berhasil dibuat sesuai dengan tujuan Capstone Project. Program mampu membantu pengguna dalam mencatat transaksi keuangan harian, menghitung saldo secara otomatis, menyimpan data, serta mengekspor data ke dalam file teks. Seluruh fitur utama telah berfungsi dengan baik dan aplikasi siap digunakan.
 
 
