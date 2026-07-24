@@ -5,6 +5,7 @@ Aplikasi Pencatatan Keuangan Harian
 Deskripsi Program
 
 Aplikasi Pencatatan Keuangan Harian merupakan aplikasi berbasis web yang dibuat menggunakan HTML, CSS, dan JavaScript. Program ini bertujuan untuk membantu pengguna mencatat transaksi keuangan harian berupa dana masuk dan dana keluar secara sederhana. Data transaksi disimpan menggunakan Local Storage, sehingga data tetap tersimpan meskipun browser ditutup dan dibuka kembali.
+
 Fitur Program
 1.	Input transaksi dana masuk dan dana keluar. 
 2.	Format nominal otomatis dalam mata uang Rupiah. 
