@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Aplikasi Pencatatan Keuangan Harian</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+
+background:#f4f4f4;
+padding:30px;
+
+}
+
+.container{
+
+width:1000px;
+margin:auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,.2);
+
+}
+
+h2{
+
+text-align:center;
+margin-bottom:20px;
+color:#2c3e50;
+
+}
+
+label{
+
+font-weight:bold;
+
+}
+
+input,select{
+
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:15px;
+
+}
+
+button{
+
+padding:10px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+margin-right:5px;
+font-weight:bold;
+
+}
+
+.simpan{
+
+background:#28a745;
+color:white;
+
+}
+
+.export{
+
+background:#007bff;
+color:white;
+
+}
+
+.edit{
+
+background:orange;
+color:white;
+
+}
+
+.hapus{
+
+background:red;
+color:white;
+
+}
+
+table{
+
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+
+}
+
+table th{
+
+background:greenyellow;
+padding:10px;
+border:1px solid black;
+
+}
+
+table td{
+
+padding:10px;
+border:1px solid black;
+text-align:center;
+
+}
+
+.info{
+
+margin-top:20px;
+
+}
+
+.info h3{
+
+margin:5px 0;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>APLIKASI PENCATATAN KEUANGAN HARIAN</h2>
+
+<label>Jenis Transaksi</label>
+
+<select id="jenis">
+
+<option value="masuk">Dana Masuk</option>
+
+<option value="keluar">Dana Keluar</option>
+
+</select>
+
+<label>Jumlah</label>
+
+<input
+type="text"
+id="jumlah"
+placeholder="Rp 0,00"
+oninput="formatRupiah(this)"
+>
+
+<label>Kategori</label>
+
+<input
+type="text"
+id="kategori"
+placeholder="Kategori"
+>
+
+<label>Tanggal</label>
+
+<input
+type="date"
+id="tanggal"
+>
+
+<label>Deskripsi</label>
+
+<input
+type="text"
+id="deskripsi"
+placeholder="Deskripsi"
+>
+
+<button
+class="simpan"
+onclick="simpanTransaksi()"
+>
+Simpan
+</button>
+
+<button
+class="export"
+onclick="downloadTXT()"
+>
+Export keuangan.txt
+</button>
+
+<div class="info">
+
+<h3>Saldo :
+<span id="saldo">
+Rp 0,00
+</span>
+</h3>
+
+<h3>Total Pemasukan :
+<span id="totalMasuk">
+Rp 0,00
+</span>
+</h3>
+
+<h3>Total Pengeluaran :
+<span id="totalKeluar">
+Rp 0,00
+</span>
+</h3>
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>No</th>
+
+<th>Dana Masuk</th>
+
+<th>Dana Keluar</th>
+
+<th>Kategori</th>
+
+<th>Deskripsi</th>
+
+<th>Tanggal</th>
+
+<th>Aksi</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tabel">
+
+</tbody>
+
+</table>
+
+<script>
+
+let data =
+JSON.parse(localStorage.getItem("keuangan")) || [];
+
+let indexEdit = -1;
+// ======================
+// FORMAT RUPIAH
+// ======================
+
+function formatRupiah(input){
+
+    let value=input.value.replace(/[^0-9,]/g,'');
+
+    let parts=value.split(',');
+
+    let angka=parts[0];
+
+    let desimal=parts[1];
+
+    let sisa=angka.length%3;
+
+    let rupiah=angka.substr(0,sisa);
+
+    let ribuan=angka.substr(sisa).match(/\d{3}/g);
+
+    if(ribuan){
+
+        let separator=sisa?".":"";
+
+        rupiah+=separator+ribuan.join(".");
+
+    }
+
+    if(desimal!=undefined){
+
+        rupiah+=","+desimal.substring(0,2);
+
+    }
+
+    input.value="Rp "+rupiah;
+
+}
+
+
+// ======================
+// FORMAT OUTPUT
+// ======================
+
+function formatRupiahDisplay(angka){
+
+    return "Rp "+angka.toLocaleString("id-ID",{
+
+        minimumFractionDigits:2,
+
+        maximumFractionDigits:2
+
+    });
+
+}
+
+
+// ======================
+// SIMPAN LOCAL STORAGE
+// ======================
+
+function simpanData(){
+
+    localStorage.setItem(
+
+        "keuangan",
+
+        JSON.stringify(data)
+
+    );
+
+}
+
+
+// ======================
+// TAMBAH TRANSAKSI
+// ======================
+
+function simpanTransaksi(){
+
+    const jenis=document.getElementById("jenis").value;
+
+    const raw=document.getElementById("jumlah").value;
+
+    const kategori=document.getElementById("kategori").value;
+
+    const tanggal=document.getElementById("tanggal").value;
+
+    const deskripsi=document.getElementById("deskripsi").value;
+
+    if(raw==""||kategori==""||tanggal==""){
+
+        alert("Semua data wajib diisi");
+
+        return;
+
+    }
+
+    const jumlah=parseFloat(
+
+        raw.replace(/Rp\s?/g,"")
+
+        .replace(/\./g,"")
+
+        .replace(",", ".")
+
+    );
+
+    const transaksi={
+
+        jenis,
+
+        jumlah,
+
+        kategori,
+
+        tanggal,
+
+        deskripsi
+
+    };
+
+    if(indexEdit==-1){
+
+        data.push(transaksi);
+
+    }else{
+
+        data[indexEdit]=transaksi;
+
+        indexEdit=-1;
+
+    }
+
+    simpanData();
+
+    tampilkan();
+
+    resetForm();
+
+}
+
+
+// ======================
+// TAMPILKAN DATA
+// ======================
+
+function tampilkan(){
+
+    let tabel=document.getElementById("tabel");
+
+    tabel.innerHTML="";
+
+    let saldo=0;
+
+    let totalMasuk=0;
+
+    let totalKeluar=0;
+
+    data.forEach((t,i)=>{
+
+        let masuk="";
+
+        let keluar="";
+
+        if(t.jenis=="masuk"){
+
+            saldo+=t.jumlah;
+
+            totalMasuk+=t.jumlah;
+
+            masuk=formatRupiahDisplay(t.jumlah);
+
+        }else{
+
+            saldo-=t.jumlah;
+
+            totalKeluar+=t.jumlah;
+
+            keluar=formatRupiahDisplay(t.jumlah);
+
+        }
+
+        tabel.innerHTML+=`
+
+        <tr>
+
+        <td>${i+1}</td>
+
+        <td>${masuk}</td>
+
+        <td>${keluar}</td>
+
+        <td>${t.kategori}</td>
+
+        <td>${t.deskripsi}</td>
+
+        <td>${t.tanggal}</td>
+
+        <td>
+
+        <button class="edit" onclick="edit(${i})">
+
+        Edit
+
+        </button>
+
+        <button class="hapus" onclick="hapus(${i})">
+
+        Hapus
+
+        </button>
+
+        </td>
+
+        </tr>
+
+        `;
+
+    });
+
+    document.getElementById("saldo").innerHTML=
+
+        formatRupiahDisplay(saldo);
+
+    document.getElementById("totalMasuk").innerHTML=
+
+        formatRupiahDisplay(totalMasuk);
+
+    document.getElementById("totalKeluar").innerHTML=
+
+        formatRupiahDisplay(totalKeluar);
+
+}
+// ======================
+// EDIT DATA
+// ======================
+
+function edit(i){
+
+    let t = data[i];
+
+    document.getElementById("jenis").value = t.jenis;
+
+    document.getElementById("jumlah").value =
+        formatRupiahDisplay(t.jumlah);
+
+    document.getElementById("kategori").value =
+        t.kategori;
+
+    document.getElementById("tanggal").value =
+        t.tanggal;
+
+    document.getElementById("deskripsi").value =
+        t.deskripsi;
+
+    indexEdit = i;
+
+}
+
+
+// ======================
+// HAPUS DATA
+// ======================
+
+function hapus(i){
+
+    if(confirm("Yakin ingin menghapus data?")){
+
+        data.splice(i,1);
+
+        simpanData();
+
+        tampilkan();
+
+    }
+
+}
+
+
+// ======================
+// RESET FORM
+// ======================
+
+function resetForm(){
+
+    document.getElementById("jenis").value="masuk";
+
+    document.getElementById("jumlah").value="";
+
+    document.getElementById("kategori").value="";
+
+    document.getElementById("tanggal").value="";
+
+    document.getElementById("deskripsi").value="";
+
+}
+
+
+// ======================
+// EXPORT KE FILE TXT
+// ======================
+
+function downloadTXT(){
+
+    let isi="";
+
+    isi+="==============================================================\n";
+    isi+="          DATA TRANSAKSI APLIKASI KEUANGAN HARIAN\n";
+    isi+="==============================================================\n\n";
+
+    isi+="+----+-------------+--------------+---------------+------------+----------------+\n";
+    isi+="| No | Jenis       | Jumlah (Rp)  | Kategori      | Tanggal    | Deskripsi      |\n";
+    isi+="+----+-------------+--------------+---------------+------------+----------------+\n";
+
+    let totalMasuk=0;
+    let totalKeluar=0;
+
+    data.forEach((t,i)=>{
+
+        let jenis=t.jenis=="masuk" ? "Dana Masuk" : "Dana Keluar";
+
+        if(t.jenis=="masuk"){
+            totalMasuk+=t.jumlah;
+        }else{
+            totalKeluar+=t.jumlah;
+        }
+
+        isi+="| "
+            +(i+1).toString().padEnd(2)
+            +" | "
+            +jenis.padEnd(11)
+            +" | "
+            +t.jumlah.toLocaleString("id-ID").padStart(12)
+            +" | "
+            +t.kategori.padEnd(13)
+            +" | "
+            +t.tanggal.padEnd(10)
+            +" | "
+            +t.deskripsi.padEnd(14)
+            +" |\n";
+
+    });
+
+    isi+="+----+-------------+--------------+---------------+------------+----------------+\n\n";
+
+    isi+="==============================================================\n";
+    isi+="RINGKASAN\n";
+    isi+="==============================================================\n\n";
+
+    isi+="Total Pemasukan   : Rp"+totalMasuk.toLocaleString("id-ID")+"\n";
+    isi+="Total Pengeluaran : Rp"+totalKeluar.toLocaleString("id-ID")+"\n";
+    isi+="Saldo             : Rp"+(totalMasuk-totalKeluar).toLocaleString("id-ID");
+
+    const blob=new Blob([isi],{
+        type:"text/plain;charset=utf-8"
+    });
+
+    const link=document.createElement("a");
+
+    link.href=URL.createObjectURL(blob);
+
+    link.download="keuangan.txt";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+}
+
+
+// ======================
+// LOAD AWAL
+// ======================
+
+tampilkan();
+
+</script>
+
+</body>
+
+</html>
